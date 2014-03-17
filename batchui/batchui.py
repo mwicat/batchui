@@ -85,11 +85,14 @@ def run(argv, *args, **kw):
 class BatchWindow(QtGui.QMainWindow):
     def __init__(self, app_name, parse_file=None, process_item=None,
                  columns=None, preferences=None,
-                 actions=None, is_valid_file=None, parameters_cls=None):
+                 actions=None, is_valid_file=None, parameters_cls=None,
+                 guidata=None):
         super(BatchWindow, self).__init__()
 
         self.app_name = app_name
         self.treeColumns = columns
+        
+        self.guidata = guidata
         
         self.ui = qtutil.setupUi(self)
         self.showStatus("Hint: Drag and drop files and directories" 
@@ -145,9 +148,9 @@ class BatchWindow(QtGui.QMainWindow):
             self.popMenu.addAction( self.actionEdit )
     
     def installParameters(self, parameters_cls):    
-        if parameters_cls is not None:
-            from guidata.dataset.qtwidgets import DataSetEditGroupBox
-            groupbox1 = DataSetEditGroupBox("Output parameters",
+        if self.guidata is not None and parameters_cls is not None:
+            GroupBox = self.guidata.dataset.qtwidgets.DataSetEditGroupBox
+            groupbox1 = GroupBox("Output parameters",
                                             parameters_cls, comment='',
                                             show_button=True)
             groupbox1.layout.setAlignment(QtCore.Qt.AlignTop)
@@ -160,9 +163,8 @@ class BatchWindow(QtGui.QMainWindow):
             self.ui.sideWidget.hide()
     
     def installPreferences(self, preferences):
-        if preferences is not None:        
-            from guidata.userconfig import UserConfig
-            uc = UserConfig({})
+        if self.guidata is not None and preferences is not None:        
+            uc = self.guidata.userconfig.UserConfig({})
             uc.set_application(self.app_name, '1.0.0')
                     
             preferences.read_config(uc, 'preferences', '')
