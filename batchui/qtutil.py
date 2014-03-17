@@ -68,7 +68,6 @@ class XStream(QObject):
         return -1
 
     def write( self, msg ):
-        print 'writing', msg
         if ( not self.signalsBlocked() ):
             self.messageWritten.emit(unicode(msg))
 

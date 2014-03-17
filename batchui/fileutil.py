@@ -39,7 +39,4 @@ def make_backup(fn):
     basefn = os.path.basename(fn)
     timestamp = time.strftime("%d%m%y%H%M%S", time.localtime())
     backup_fn = os.path.join(dirn, '%s%s_%s' % (BACKUP_PREFIX, timestamp, basefn))
-    print 'create backup %s: %s' % (fn, backup_fn)
     shutil.copyfile(fn, backup_fn)
-    print 'ok'
-
