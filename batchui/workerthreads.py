@@ -9,11 +9,11 @@ class Worker(QtCore.QObject):
     item_processed = QtCore.pyqtSignal(object)
     item_failed = QtCore.pyqtSignal(object)    
     
-    def __init__(self, process_fun, parent=None):
+    def __init__(self, process_fun=None, parent=None):
         QtCore.QObject.__init__(self, parent)
         self.queue = Queue()
         self.flushing = False
-        self.process = process_fun
+        self.process = process_fun if process_fun is not None else lambda x: x
 
     def enqueue(self, fns):
         self.queue.put(fns)
@@ -47,12 +47,11 @@ class SimpleWorker(QtCore.QObject):
                 item_new = self.process()
                 if not item_new:
                     break
-                print 'go with', repr(item_new)
                 self.item_processed.emit(item_new)
             except Exception as e:
                 self.item_failed.emit(e)
 
-def createWorkerThread(process_fun, cb=None, start=True, worker_cls=Worker,
+def createWorkerThread(process_fun=None, cb=None, start=True, worker_cls=Worker,
                        error_handler=None):
     worker_thread = QtCore.QThread()
     worker = worker_cls(process_fun)

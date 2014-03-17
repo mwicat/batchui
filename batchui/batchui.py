@@ -86,12 +86,13 @@ class BatchWindow(QtGui.QMainWindow):
     def __init__(self, app_name, parse_file=None, process_item=None,
                  columns=None, preferences=None,
                  actions=None, is_valid_file=None, parameters_cls=None,
-                 guidata=None):
+                 guidata=None,
+                 capture_streams=False):
         super(BatchWindow, self).__init__()
 
         self.app_name = app_name
         self.treeColumns = columns
-        
+                
         self.guidata = guidata
         
         self.ui = qtutil.setupUi(self)
@@ -101,6 +102,8 @@ class BatchWindow(QtGui.QMainWindow):
         self.setWindowTitle(app_name)
 
         self.setupFilesTreeWidget()
+        
+        self.setupCaptureStreams(capture_streams)
         
         self.ui.showWithoutGuessAction.toggled.connect(self.handleShowWithoutGuess)
         self.ui.exitAction.triggered.connect(QtGui.qApp.quit)
@@ -131,7 +134,16 @@ class BatchWindow(QtGui.QMainWindow):
                                                  for column_var, column_label
                                                  in self.treeColumns])        
         self.ui.filesTreeWidget.header().resizeSection(0, 300)
-     
+    
+    def setupCaptureStreams(self, capture_streams):
+        if capture_streams:
+            def capture_cb((data1, data2)):
+                self.ui.console.insertPlainText(data1)
+            self.capture_worker, self.capture_thread = \
+                createWorkerThread(cb=capture_cb)
+            self.capture_worker.write = self.capture_worker.enqueue
+            sys.stderr = self.capture_worker        
+    
     def installActions(self, actions):
         if actions is None:
             return
@@ -141,7 +153,6 @@ class BatchWindow(QtGui.QMainWindow):
                 items = self.getSelectedItems()
                 action_handler(items)
                 for item in items:
-                    print 'updating item'
                     updateItemStatus(item, self.treeColumns)
             self.actionEdit = self.ui.menuActions.addAction(action_name,
                                                             action_cb)
@@ -244,7 +255,7 @@ class BatchWindow(QtGui.QMainWindow):
     def handleShowWithoutGuess(self, checked):
         for item in self.getItems():
             hide = not self.shouldShowItem(item, checked)
-            self.filesTreeWidget.setItemHidden(item, hide)
+            self.ui.filesTreeWidget.setItemHidden(item, hide)
 
     def setupContextMenu(self):
         self.popMenu = QtGui.QMenu(self)
@@ -297,7 +308,7 @@ class BatchWindow(QtGui.QMainWindow):
                             self.ui.filesTreeWidget,
                             self.treeColumns)
         if not self.shouldShowItem(item): 
-            self.filesTreeWidget.setItemHidden(item, True)
+            self.ui.filesTreeWidget.setItemHidden(item, True)
         return item
     
     def filesDropped(self, l):
